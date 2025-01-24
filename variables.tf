@@ -9,3 +9,9 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+variable "github_repository" {
+  description = "GitHub repository (format: organization/repository)"
+  type        = string
+  default     = "MartinMohammed/backend" # Replace with your actual repository
+}
