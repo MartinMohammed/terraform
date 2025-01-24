@@ -4,11 +4,15 @@ on:
   push:
     branches: ["main"]
     paths:
-      - "terraform/**"
+      - "**/*.tf"
+      - "**/*.tfvars"
+      - ".github/workflows/terraform.yml"
   pull_request:
-    branches: ["main"]
+    branches: ["main", "master"]
     paths:
-      - "terraform/**"
+      - "**/*.tf"
+      - "**/*.tfvars"
+      - ".github/workflows/terraform.yml"
 
 permissions:
   contents: read
@@ -23,7 +27,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: ./terraform
+        working-directory: .
 
     steps:
       - name: Checkout
