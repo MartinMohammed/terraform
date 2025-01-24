@@ -8,9 +8,9 @@ terraform {
 
   backend "s3" {
     # You'll need to configure these values based on your S3 bucket
-    # bucket = "your-terraform-state-bucket"
-    # key    = "game-jam/terraform.tfstate"
-    # region = "us-east-1"
+    bucket = "game-jam-hackathon-terraform-state"
+    key    = "game-jam/terraform.tfstate"
+    region = "eu-west-1"
   }
 }
 
