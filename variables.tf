@@ -20,17 +20,5 @@ variable "terraform_state_bucket" {
 variable "terraform_state_key" {
   description = "Path to the state file inside the S3 bucket"
   type        = string
-  default     = "game-jam/terraform.tfstate"
-}
-
-variable "terraform_state_region" {
-  description = "AWS region where the S3 bucket is located"
-  type        = string
-  default     = "eu-central-1"
-}
-
-variable "terraform_state_dynamodb_table" {
-  description = "Name of the DynamoDB table for state locking"
-  type        = string
-  default     = "game-jam-terraform-state-lock"
+  default     = "terraform.tfstate"
 }
