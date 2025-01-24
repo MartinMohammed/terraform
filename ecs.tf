@@ -76,3 +76,31 @@ resource "aws_ecs_task_definition" "fargate_task" {
     }
   ])
 }
+
+
+resource "aws_ecs_service" "fastapi_ecs_service" {
+  name            = "fastapi-service"
+  cluster         = aws_ecs_cluster.ECS_Cluster.id
+  task_definition = aws_ecs_task_definition.fargate_task.arn
+  desired_count   = 1
+
+  # Capacity Provider Strategy: Prefer Fargate Spot, fallback to Fargate
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE_SPOT"
+    weight            = 100 # Primary preference for Fargate Spot 
+    base              = 0
+  }
+
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE"
+    weight            = 1 # Secondary fallback to Fargate if Fargate Spot is unavailable
+    base              = 0 # Ensures that Fargate is used if Fargate Spot fails
+  }
+
+  network_configuration {
+    subnets          = [data.aws_subnet.selected_subnet.id]
+    security_groups  = [aws_security_group.ecs_web_access_sg.id] # Apply the custom SG
+    assign_public_ip = true
+  }
+
+}
