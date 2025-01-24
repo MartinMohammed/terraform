@@ -24,3 +24,11 @@ data "aws_security_group" "default" {
     values = ["default"]
   }
 }
+
+# Retrieve the default subnets in the default VPC
+data "aws_subnets" "default_subnets" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}

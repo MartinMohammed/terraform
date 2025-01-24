@@ -77,6 +77,64 @@ resource "aws_ecs_task_definition" "fargate_task" {
   ])
 }
 
+resource "aws_lb" "ecs_alb" {
+  name               = "fastapi-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb_sg.id]
+  subnets            = data.aws_subnets.default_subnets.ids
+}
+
+resource "aws_lb_target_group" "ecs_tg" {
+  name        = "fastapi-tg"
+  port        = 8000
+  protocol    = "HTTP"
+  vpc_id      = data.aws_vpc.default.id
+  target_type = "ip"
+
+  health_check {
+    enabled             = true
+    healthy_threshold   = 2
+    interval            = 30
+    matcher             = "200"
+    path                = "/health"
+    port                = "traffic-port"
+    protocol            = "HTTP"
+    timeout             = 5
+    unhealthy_threshold = 3
+  }
+}
+
+resource "aws_lb_listener" "front_end" {
+  load_balancer_arn = aws_lb.ecs_alb.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.ecs_tg.arn
+  }
+}
+
+resource "aws_security_group" "alb_sg" {
+  name        = "alb_security_group"
+  description = "Security group for ALB"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
 
 resource "aws_ecs_service" "fastapi_ecs_service" {
   name            = "fastapi-service"
@@ -87,20 +145,25 @@ resource "aws_ecs_service" "fastapi_ecs_service" {
   # Capacity Provider Strategy: Prefer Fargate Spot, fallback to Fargate
   capacity_provider_strategy {
     capacity_provider = "FARGATE_SPOT"
-    weight            = 100 # Primary preference for Fargate Spot 
+    weight            = 100
     base              = 0
   }
 
   capacity_provider_strategy {
     capacity_provider = "FARGATE"
-    weight            = 1 # Secondary fallback to Fargate if Fargate Spot is unavailable
-    base              = 0 # Ensures that Fargate is used if Fargate Spot fails
+    weight            = 1
+    base              = 0
   }
 
   network_configuration {
-    subnets          = [data.aws_subnet.selected_subnet.id]
-    security_groups  = [aws_security_group.ecs_web_access_sg.id] # Apply the custom SG
+    subnets          = data.aws_subnets.default_subnets.ids
+    security_groups  = [aws_security_group.ecs_web_access_sg.id]
     assign_public_ip = true
   }
 
+  load_balancer {
+    target_group_arn = aws_lb_target_group.ecs_tg.arn
+    container_name   = "fastapi-service"
+    container_port   = 8000
+  }
 }
