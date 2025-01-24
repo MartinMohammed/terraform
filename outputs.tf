@@ -45,8 +45,8 @@ output "ecs_task_definition_arn" {
 
 
 output "ecs_security_group_id" {
-  description = "The security group ID used by the ECS service"
-  value       = aws_security_group.ecs_web_access_sg.id
+  description = "The security group ID used by the ECS tasks"
+  value       = aws_security_group.ecs_tasks_sg.id
 }
 
 output "alb_dns_name" {
