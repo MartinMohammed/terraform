@@ -1,42 +1,6 @@
-# GitHub Actions OIDC Provider
-data "aws_iam_openid_connect_provider" "github_actions" {
-  url = "https://token.actions.githubusercontent.com"
-}
-
-# GitHub Actions Role
-data "aws_iam_policy_document" "github_actions_assume_role" {
-  statement {
-    actions = ["sts:AssumeRoleWithWebIdentity"]
-    effect  = "Allow"
-
-    principals {
-      type        = "Federated"
-      identifiers = [data.aws_iam_openid_connect_provider.github_actions.arn]
-    }
-
-    condition {
-      test     = "StringLike"
-      variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:*"]
-    }
-  }
-}
-
-
-resource "aws_iam_role" "github_actions" {
-  name               = "github-actions-ecr-role"
-  description        = "Role used by GitHub Actions to push images to ECR"
-  assume_role_policy = data.aws_iam_policy_document.github_actions_assume_role.json
-
-  tags = {
-    Name        = "github-actions-ecr-role"
-    Environment = var.environment
-    ManagedBy   = "Terraform"
-  }
-}
-
-# ECR Push Policy
-data "aws_iam_policy_document" "ecr_push" {
+# Reference ECR permissions needed for CI/CD
+# These permissions are already included in AdministratorAccess policy
+data "aws_iam_policy_document" "ecr_permissions_reference" {
   statement {
     effect = "Allow"
     actions = [
@@ -51,10 +15,4 @@ data "aws_iam_policy_document" "ecr_push" {
     ]
     resources = ["*"]
   }
-}
-
-resource "aws_iam_role_policy" "github_actions_ecr" {
-  name   = "ecr-push-policy"
-  role   = aws_iam_role.github_actions.id
-  policy = data.aws_iam_policy_document.ecr_push.json
 }
