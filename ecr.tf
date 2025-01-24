@@ -1,12 +1,10 @@
-resource "aws_ecr_repository" "backend" {
-  name                 = "game-jam-backend"
-  image_tag_mutability = "MUTABLE"
+resource "aws_ecr_repository" "ElasticContainerRegistry" {
+  name                 = "ecr-fastapi-service"
+  image_tag_mutability = "MUTABLE" # if the same tag is pushed again, it will be overwritten
 
   image_scanning_configuration {
     scan_on_push = true
   }
-
-  force_delete = true
 }
 
 # ECR Lifecycle policy to keep only last 5 images
