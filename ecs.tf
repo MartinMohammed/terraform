@@ -116,6 +116,7 @@ resource "aws_lb_listener" "front_end" {
   }
 }
 
+
 resource "aws_ecs_service" "fastapi_ecs_service" {
   name            = "fastapi-service"
   cluster         = aws_ecs_cluster.ECS_Cluster.id
