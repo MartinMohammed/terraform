@@ -1,0 +1,13 @@
+# AWS Region
+aws_region = "eu-central-1"
+
+# Environment
+environment = "dev"
+
+# S3 Backend Configuration
+terraform_state_bucket = "game-jam-hackathon-terraform-state"
+terraform_state_key    = "game-jam/terraform.tfstate"
+terraform_state_region = "eu-central-1"
+
+# DynamoDB
+terraform_state_dynamodb_table = "game-jam-terraform-state-lock" 
