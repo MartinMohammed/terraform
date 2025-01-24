@@ -45,7 +45,7 @@ resource "aws_ecs_task_definition" "fargate_task" {
   container_definitions = jsonencode([
     {
       name  = "fastapi-service"
-      image = "${aws_ecr_repository.ecr_repo.repository_url}:latest" # Using the latest image from ECR
+      image = "${aws_ecr_repository.backend.repository_url}:latest" # Using the latest image from ECR
 
       # Environment variables can be empty if not needed
       environment = [],
