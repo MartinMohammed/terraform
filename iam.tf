@@ -22,6 +22,7 @@ data "aws_iam_policy_document" "github_actions_assume_role" {
   }
 }
 
+
 resource "aws_iam_role" "github_actions" {
   name               = "github-actions-ecr-role"
   description        = "Role used by GitHub Actions to push images to ECR"
