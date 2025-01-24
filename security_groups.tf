@@ -24,7 +24,6 @@ resource "aws_security_group" "ecs_tasks_sg" {
   }
 }
 
-
 resource "aws_security_group" "alb_sg" {
   name        = "alb_security_group"
   description = "Security group for ALB"
