@@ -7,9 +7,11 @@ terraform {
   }
 
   backend "s3" {
-    bucket = var.terraform_state_bucket
-    key    = var.terraform_state_key
-    region = var.aws_region
+    bucket         = "game-jam-hackathon-terraform-state"
+    key            = "terraform.tfstate"
+    region         = "eu-central-1"
+    encrypt        = true
+    dynamodb_table = "game-jam-terraform-state-lock"
   }
 }
 
