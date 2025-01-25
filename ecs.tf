@@ -51,7 +51,7 @@ resource "aws_ecs_task_definition" "fargate_task" {
       secrets = [
         {
           name      = "MISTRAL_API_KEY",
-          valueFrom = aws_secretsmanager_secret.mistral_api_key.id
+          valueFrom = aws_secretsmanager_secret.mistral_api_key.arn
         }
       ],
 
