@@ -9,7 +9,7 @@ locals {
     }
     prod = {
       name          = "prod"
-      desired_count = 2
+      desired_count = 1
       cpu           = "1024"
       memory        = "2048"
     }
