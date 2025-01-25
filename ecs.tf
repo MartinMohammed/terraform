@@ -50,8 +50,8 @@ resource "aws_ecs_task_definition" "fargate_task" {
       # Environment variables including the secret
       secrets = [
         {
-          name      = "MISTRAL_API_KEY_ARN",
-          valueFrom = aws_secretsmanager_secret.mistral_api_key.arn
+          name      = "MISTRAL_API_KEY",
+          valueFrom = aws_secretsmanager_secret.mistral_api_key.id
         }
       ],
 
