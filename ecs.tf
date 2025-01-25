@@ -50,7 +50,7 @@ resource "aws_ecs_task_definition" "fargate_task" {
       # Environment variables including the secret
       secrets = [
         {
-          name      = "MISTRAL_API_KEY",
+          name      = "MISTRAL_API_KEY_ARN",
           valueFrom = aws_secretsmanager_secret.mistral_api_key.arn
         }
       ],
@@ -96,6 +96,13 @@ resource "aws_lb_target_group" "ecs_tg" {
   protocol    = "HTTP"
   vpc_id      = data.aws_vpc.default.id
   target_type = "ip"
+
+  # Enable sticky sessions using application-based cookies
+  stickiness {
+    type            = "app_cookie"
+    cookie_name     = "session_id" # This should match your FastAPI session cookie name
+    cookie_duration = 86400        # 24 hours in seconds
+  }
 
   health_check {
     enabled             = true
