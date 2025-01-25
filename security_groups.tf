@@ -1,6 +1,9 @@
+# Create security groups for ECS tasks for each environment
 resource "aws_security_group" "ecs_tasks_sg" {
-  name        = "ecs-tasks-from-alb-sg"
-  description = "Allow inbound traffic from ALB only on port 8000"
+  for_each = local.environments
+
+  name        = "${local.base_name}-ecs-tasks-${each.value.name}"
+  description = "Allow inbound traffic from ALB only on port 8000 for ${each.value.name}"
   vpc_id      = data.aws_vpc.default.id
 
   # Inbound rule to allow traffic only from ALB on port 8000
@@ -8,7 +11,7 @@ resource "aws_security_group" "ecs_tasks_sg" {
     from_port       = 8000
     to_port         = 8000
     protocol        = "tcp"
-    security_groups = [aws_security_group.alb_sg.id] # Only allow traffic from ALB security group
+    security_groups = [aws_security_group.alb_sg[each.key].id] # Only allow traffic from ALB security group
   }
 
   # Outbound rule to allow all traffic to any destination
@@ -20,13 +23,18 @@ resource "aws_security_group" "ecs_tasks_sg" {
   }
 
   tags = {
-    Name = "ecs-tasks-from-alb-sg"
+    Name        = "${local.base_name}-ecs-tasks-${each.value.name}"
+    Environment = each.value.name
+    Project     = local.base_name
   }
 }
 
+# Create security groups for ALB for each environment
 resource "aws_security_group" "alb_sg" {
-  name        = "alb_security_group"
-  description = "Security group for ALB"
+  for_each = local.environments
+
+  name        = "${local.base_name}-alb-${each.value.name}"
+  description = "Security group for ALB in ${each.value.name}"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
@@ -41,5 +49,11 @@ resource "aws_security_group" "alb_sg" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "${local.base_name}-alb-${each.value.name}"
+    Environment = each.value.name
+    Project     = local.base_name
   }
 }

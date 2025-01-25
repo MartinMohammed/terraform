@@ -13,6 +13,7 @@ resource "aws_iam_role" "ecs_task_execution_role" {
     Action = "sts:AssumeRole" }]
   })
 }
+
 ##################################################
 # 2. Create the policy to the role
 ##################################################

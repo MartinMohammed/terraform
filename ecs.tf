@@ -1,39 +1,50 @@
 locals {
-  base_name = var.base_name # This should be defined in variables.tf
+  base_name = var.base_name
   environments = {
     dev = {
-      name          = "dev"
-      desired_count = 1
-      cpu           = "512"
-      memory        = "1024"
+      name          = var.environment_names["dev"]
+      desired_count = var.resource_settings["dev"].instance_count
+      cpu           = var.resource_settings["dev"].container_cpu
+      memory        = var.resource_settings["dev"].container_memory
     }
+
     prod = {
-      name          = "prod"
-      desired_count = 1
-      cpu           = "1024"
-      memory        = "2048"
+      name          = var.environment_names["prod"]
+      desired_count = var.resource_settings["prod"].instance_count
+      cpu           = var.resource_settings["prod"].container_cpu
+      memory        = var.resource_settings["prod"].container_memory
     }
 
 
   }
+
+  # Resource naming patterns
+  resource_names = {
+    cluster = "${local.base_name}-cluster"
+    service = "app-service"
+    task    = "${local.base_name}-task"
+    alb     = "${local.base_name}-alb"
+    tg      = "${local.base_name}-tg"
+  }
 }
 
-# Create ECS clusters for dev and prod
-resource "aws_ecs_cluster" "ecs_clusters" {
-  for_each = local.environments
+# Create a single ECS cluster for both environments
+resource "aws_ecs_cluster" "ecs_cluster" {
+  name = local.resource_names.cluster
 
-  name = "${local.base_name}-cluster-${each.key}"
   setting {
     name  = "containerInsights"
     value = "enabled"
   }
+
+  tags = {
+    Project = local.base_name
+  }
 }
 
-# Create capacity providers for each cluster
+# Create capacity providers for the cluster
 resource "aws_ecs_cluster_capacity_providers" "ecs_capacity_strategy" {
-  for_each = local.environments
-
-  cluster_name = aws_ecs_cluster.ecs_clusters[each.key].name
+  cluster_name = aws_ecs_cluster.ecs_cluster.name
 
   capacity_providers = ["FARGATE_SPOT", "FARGATE"]
 
@@ -54,7 +65,7 @@ resource "aws_ecs_cluster_capacity_providers" "ecs_capacity_strategy" {
 resource "aws_ecs_task_definition" "fargate_task" {
   for_each = local.environments
 
-  family                   = "${local.base_name}-service-${each.key}"
+  family                   = "${local.resource_names.task}-${each.value.name}"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
@@ -69,15 +80,15 @@ resource "aws_ecs_task_definition" "fargate_task" {
 
   container_definitions = jsonencode([
     {
-      name  = "${local.base_name}-service-${each.key}"
-      image = "${aws_ecr_repository.ElasticContainerRegistry.repository_url}:${each.key}"
+      name  = "${local.resource_names.service}-${each.value.name}"
+      image = "${aws_ecr_repository.app_repository.repository_url}:${each.value.name}"
 
       secrets = [
         {
-          name      = "MISTRAL_API_KEY",
+          name      = "MISTRAL_API_KEY"
           valueFrom = aws_secretsmanager_secret.mistral_api_key.arn
         }
-      ],
+      ]
 
       portMappings = [
         {
@@ -91,7 +102,7 @@ resource "aws_ecs_task_definition" "fargate_task" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = "/ecs/${local.base_name}-service-${each.key}"
+          awslogs-group         = "/ecs/${local.resource_names.service}-${each.value.name}"
           awslogs-region        = var.aws_region
           awslogs-stream-prefix = "ecs"
           awslogs-create-group  = "true"
@@ -100,26 +111,43 @@ resource "aws_ecs_task_definition" "fargate_task" {
       }
 
       essential = true
+
+      environment = [
+        {
+          name  = "ENVIRONMENT"
+          value = each.value.name
+        }
+      ]
     }
   ])
+
+  tags = {
+    Environment = each.value.name
+    Project     = local.base_name
+  }
 }
 
 # Create ALB for each environment
 resource "aws_lb" "ecs_alb" {
   for_each = local.environments
 
-  name               = "${local.base_name}-alb-${each.key}"
+  name               = "${local.resource_names.alb}-${each.value.name}"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb_sg.id]
+  security_groups    = [aws_security_group.alb_sg[each.key].id]
   subnets            = data.aws_subnets.default_subnets.ids
+
+  tags = {
+    Environment = each.value.name
+    Project     = local.base_name
+  }
 }
 
 # Create target groups for each environment
 resource "aws_lb_target_group" "ecs_tg" {
   for_each = local.environments
 
-  name        = "${local.base_name}-tg-${each.key}"
+  name        = "${local.resource_names.tg}-${each.value.name}"
   port        = 8000
   protocol    = "HTTP"
   vpc_id      = data.aws_vpc.default.id
@@ -162,8 +190,8 @@ resource "aws_lb_listener" "front_end" {
 resource "aws_ecs_service" "fastapi_ecs_service" {
   for_each = local.environments
 
-  name            = "${local.base_name}-service-${each.key}"
-  cluster         = aws_ecs_cluster.ecs_clusters[each.key].id
+  name            = "${local.resource_names.service}-${each.value.name}"
+  cluster         = aws_ecs_cluster.ecs_cluster.id
   task_definition = aws_ecs_task_definition.fargate_task[each.key].arn
   desired_count   = each.value.desired_count
 
@@ -181,13 +209,18 @@ resource "aws_ecs_service" "fastapi_ecs_service" {
 
   network_configuration {
     subnets          = data.aws_subnets.default_subnets.ids
-    security_groups  = [aws_security_group.ecs_tasks_sg.id]
+    security_groups  = [aws_security_group.ecs_tasks_sg[each.key].id]
     assign_public_ip = true
   }
 
   load_balancer {
     target_group_arn = aws_lb_target_group.ecs_tg[each.key].arn
-    container_name   = "${local.base_name}-service-${each.key}"
+    container_name   = "${local.resource_names.service}-${each.value.name}"
     container_port   = 8000
+  }
+
+  tags = {
+    Environment = each.value.name
+    Project     = local.base_name
   }
 }
