@@ -4,10 +4,13 @@ variable "aws_region" {
   default     = "eu-central-1"
 }
 
-variable "environment" {
-  description = "Environment name (e.g., dev, staging, prod)"
-  type        = string
-  default     = "dev"
+variable "environment_names" {
+  description = "Map of environment names"
+  type        = map(string)
+  default = {
+    dev  = "dev"
+    prod = "prod"
+  }
 }
 
 variable "base_name" {

@@ -1,18 +1,27 @@
 locals {
-  base_name = var.base_name # This should be defined in variables.tf
+  base_name = var.base_name
   environments = {
     dev = {
-      name          = "dev"
+      name          = var.environment_names["dev"]
       desired_count = 1
       cpu           = "512"
       memory        = "1024"
     }
     prod = {
-      name          = "prod"
+      name          = var.environment_names["prod"]
       desired_count = 2
       cpu           = "1024"
       memory        = "2048"
     }
+  }
+
+  # Resource naming patterns
+  resource_names = {
+    cluster = "${local.base_name}-cluster"
+    service = "${local.base_name}-service"
+    task    = "${local.base_name}-task"
+    alb     = "${local.base_name}-alb"
+    tg      = "${local.base_name}-tg"
   }
 }
 
@@ -20,7 +29,7 @@ locals {
 resource "aws_ecs_cluster" "ecs_clusters" {
   for_each = local.environments
 
-  name = "${local.base_name}-cluster-${each.key}"
+  name = "${local.resource_names.cluster}-${each.value.name}"
   setting {
     name  = "containerInsights"
     value = "enabled"
@@ -52,7 +61,7 @@ resource "aws_ecs_cluster_capacity_providers" "ecs_capacity_strategy" {
 resource "aws_ecs_task_definition" "fargate_task" {
   for_each = local.environments
 
-  family                   = "${local.base_name}-service-${each.key}"
+  family                   = "${local.resource_names.task}-${each.value.name}"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
@@ -67,7 +76,7 @@ resource "aws_ecs_task_definition" "fargate_task" {
 
   container_definitions = jsonencode([
     {
-      name  = "${local.base_name}-service-${each.key}"
+      name  = "${local.resource_names.service}-${each.value.name}"
       image = "${aws_ecr_repository.ElasticContainerRegistry.repository_url}:${each.key}"
 
       secrets = [
@@ -89,7 +98,7 @@ resource "aws_ecs_task_definition" "fargate_task" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = "/ecs/${local.base_name}-service-${each.key}"
+          awslogs-group         = "/ecs/${local.resource_names.service}-${each.value.name}"
           awslogs-region        = var.aws_region
           awslogs-stream-prefix = "ecs"
           awslogs-create-group  = "true"
@@ -106,7 +115,7 @@ resource "aws_ecs_task_definition" "fargate_task" {
 resource "aws_lb" "ecs_alb" {
   for_each = local.environments
 
-  name               = "${local.base_name}-alb-${each.key}"
+  name               = "${local.resource_names.alb}-${each.value.name}"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
@@ -117,7 +126,7 @@ resource "aws_lb" "ecs_alb" {
 resource "aws_lb_target_group" "ecs_tg" {
   for_each = local.environments
 
-  name        = "${local.base_name}-tg-${each.key}"
+  name        = "${local.resource_names.tg}-${each.value.name}"
   port        = 8000
   protocol    = "HTTP"
   vpc_id      = data.aws_vpc.default.id
@@ -160,7 +169,7 @@ resource "aws_lb_listener" "front_end" {
 resource "aws_ecs_service" "fastapi_ecs_service" {
   for_each = local.environments
 
-  name            = "${local.base_name}-service-${each.key}"
+  name            = "${local.resource_names.service}-${each.value.name}"
   cluster         = aws_ecs_cluster.ecs_clusters[each.key].id
   task_definition = aws_ecs_task_definition.fargate_task[each.key].arn
   desired_count   = each.value.desired_count
@@ -185,7 +194,7 @@ resource "aws_ecs_service" "fastapi_ecs_service" {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.ecs_tg[each.key].arn
-    container_name   = "${local.base_name}-service-${each.key}"
+    container_name   = "${local.resource_names.service}-${each.value.name}"
     container_port   = 8000
   }
 }
