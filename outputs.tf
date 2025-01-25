@@ -1,55 +1,64 @@
-# Output the default VPC ID
-output "default_vpc_id" {
-  description = "ID of the default VPC"
+# Network outputs
+output "vpc_id" {
+  description = "ID of the VPC"
   value       = data.aws_vpc.default.id
 }
 
-# Output the subnet details to verify
-output "selected_subnet_details" {
-  description = "Details of the selected subnet"
-  value       = data.aws_subnet.selected_subnet
+output "subnet_ids" {
+  description = "IDs of the subnets used"
+  value       = data.aws_subnet.selected_subnet.id
 }
 
-
-# Output the subnet ID
-output "selected_subnet_cidr" {
-  description = "The ID of the selected subnet"
-  value       = data.aws_subnet.selected_subnet.cidr_block
-}
-
-
+# ECR outputs
 output "ecr_repository_url" {
-  description = "The URL of the ECR repository for pulling the container image"
-  value       = aws_ecr_repository.ElasticContainerRegistry.repository_url
+  description = "The URL of the ECR repository"
+  value       = aws_ecr_repository.app_repository.repository_url
 }
 
+output "ecr_repository_name" {
+  description = "The name of the ECR repository"
+  value       = aws_ecr_repository.app_repository.name
+}
+
+# ECS outputs
 output "ecs_cluster_name" {
   description = "The name of the ECS cluster"
-  value       = aws_ecs_cluster.ECS_Cluster.name
+  value       = aws_ecs_cluster.main.name
 }
 
 output "ecs_service_name" {
   description = "The name of the ECS service"
-  value       = aws_ecs_service.fastapi_ecs_service.name
+  value       = aws_ecs_service.app_service.name
 }
 
-output "ecs_task_family" {
+output "ecs_task_definition_family" {
   description = "The family name of the ECS task definition"
-  value       = aws_ecs_task_definition.fargate_task.family
+  value       = aws_ecs_task_definition.app_task.family
 }
 
-output "ecs_task_definition_arn" {
-  description = "The ARN of the ECS task definition"
-  value       = aws_ecs_task_definition.fargate_task.arn
+output "ecs_task_definition_revision" {
+  description = "The revision of the ECS task definition"
+  value       = aws_ecs_task_definition.app_task.revision
 }
 
-
-output "ecs_security_group_id" {
-  description = "The security group ID used by the ECS tasks"
-  value       = aws_security_group.ecs_tasks_sg.id
-}
-
+# Load Balancer outputs
 output "alb_dns_name" {
-  description = "The DNS name of the ALB"
-  value       = aws_lb.ecs_alb.dns_name
+  description = "The DNS name of the load balancer"
+  value       = aws_lb.main.dns_name
+}
+
+output "alb_zone_id" {
+  description = "The zone ID of the load balancer"
+  value       = aws_lb.main.zone_id
+}
+
+# Environment info
+output "environment" {
+  description = "Current environment"
+  value       = var.environment
+}
+
+output "resource_settings" {
+  description = "Current environment resource settings"
+  value       = local.env_settings
 }
