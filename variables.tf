@@ -10,3 +10,9 @@ variable "environment" {
   default     = "dev"
 }
 
+variable "base_name" {
+  description = "Base name for all resources (e.g., 'fastapi' or 'game-jam')"
+  type        = string
+  default     = "fastapi" # You can override this in terraform.tfvars
+}
+
