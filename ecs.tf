@@ -202,12 +202,14 @@ resource "aws_lb_listener" "front_end_https" {
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = aws_acm_certificate.subdomain_cert.arn
+  certificate_arn   = aws_acm_certificate_validation.cert_validation.certificate_arn
 
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.ecs_tg[each.key].arn
   }
+
+  depends_on = [aws_acm_certificate_validation.cert_validation]
 }
 
 # Create ECS services for each environment
