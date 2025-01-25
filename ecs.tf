@@ -1,53 +1,75 @@
-resource "aws_ecs_cluster" "ECS_Cluster" {
-  name = "fastapi-ecs-cluster"
+locals {
+  base_name = var.base_name # This should be defined in variables.tf
+  environments = {
+    dev = {
+      name          = "dev"
+      desired_count = 1
+      cpu           = "512"
+      memory        = "1024"
+    }
+    prod = {
+      name          = "prod"
+      desired_count = 2
+      cpu           = "1024"
+      memory        = "2048"
+    }
+  }
+}
+
+# Create ECS clusters for dev and prod
+resource "aws_ecs_cluster" "ecs_clusters" {
+  for_each = local.environments
+
+  name = "${local.base_name}-cluster-${each.key}"
   setting {
-    name  = "containerInsights" # For CloudWatch Container Insights
+    name  = "containerInsights"
     value = "enabled"
   }
 }
 
-
+# Create capacity providers for each cluster
 resource "aws_ecs_cluster_capacity_providers" "ecs_capacity_strategy" {
-  cluster_name = aws_ecs_cluster.ECS_Cluster.name
+  for_each = local.environments
+
+  cluster_name = aws_ecs_cluster.ecs_clusters[each.key].name
 
   capacity_providers = ["FARGATE_SPOT", "FARGATE"]
 
   default_capacity_provider_strategy {
     base              = 1
-    weight            = 100 # Prefer Fargate Spot as much as possible
+    weight            = 100
     capacity_provider = "FARGATE_SPOT"
   }
-  # Fallback to Fargate when Fargate Spot is unavailable
+
   default_capacity_provider_strategy {
     capacity_provider = "FARGATE"
-    base              = 0 # No tasks are required to run on Fargate
-    weight            = 1 # Lower weight for fallback to Fargate
+    base              = 0
+    weight            = 1
   }
-
 }
 
-
+# Create task definitions for each environment
 resource "aws_ecs_task_definition" "fargate_task" {
-  family                   = "fastapi-service"
-  network_mode             = "awsvpc"                                 # Required for Fargate
-  requires_compatibilities = ["FARGATE"]                              # Specify Fargate service
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn # Execution role for pulling image and logging
-  task_role_arn            = aws_iam_role.ecs_task_execution_role.arn # Task role for permissions needed by the app
-  cpu                      = "512"                                    # 512 vCPU units
-  memory                   = "1024"                                   # 1GB of memory
+  for_each = local.environments
+
+  family                   = "${local.base_name}-service-${each.key}"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_execution_role.arn
+  cpu                      = each.value.cpu
+  memory                   = each.value.memory
 
   runtime_platform {
     operating_system_family = "LINUX"
     cpu_architecture        = "X86_64"
   }
 
-  # Container definition using ECR image
   container_definitions = jsonencode([
     {
-      name  = "fastapi-service"
-      image = "${aws_ecr_repository.ElasticContainerRegistry.repository_url}:latest" # Using the latest image from ECR
+      name  = "${local.base_name}-service-${each.key}"
+      image = "${aws_ecr_repository.ElasticContainerRegistry.repository_url}:${each.key}"
 
-      # Environment variables including the secret
       secrets = [
         {
           name      = "MISTRAL_API_KEY",
@@ -55,21 +77,19 @@ resource "aws_ecs_task_definition" "fargate_task" {
         }
       ],
 
-      # Port mappings for your application
       portMappings = [
         {
-          containerPort = 8000 # Port your application listens to inside the container
+          containerPort = 8000
           hostPort      = 8000
           protocol      = "tcp"
           appProtocol   = "http"
         }
       ]
 
-      # Log configuration using AWS CloudWatch Logs
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = "/ecs/fastapi-service"
+          awslogs-group         = "/ecs/${local.base_name}-service-${each.key}"
           awslogs-region        = var.aws_region
           awslogs-stream-prefix = "ecs"
           awslogs-create-group  = "true"
@@ -77,31 +97,36 @@ resource "aws_ecs_task_definition" "fargate_task" {
         }
       }
 
-      essential = true # Ensure the container is marked as essential
+      essential = true
     }
   ])
 }
 
+# Create ALB for each environment
 resource "aws_lb" "ecs_alb" {
-  name               = "fastapi-alb"
+  for_each = local.environments
+
+  name               = "${local.base_name}-alb-${each.key}"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = data.aws_subnets.default_subnets.ids
 }
 
+# Create target groups for each environment
 resource "aws_lb_target_group" "ecs_tg" {
-  name        = "fastapi-tg"
+  for_each = local.environments
+
+  name        = "${local.base_name}-tg-${each.key}"
   port        = 8000
   protocol    = "HTTP"
   vpc_id      = data.aws_vpc.default.id
   target_type = "ip"
 
-  # Enable sticky sessions using application-based cookies
   stickiness {
     type            = "app_cookie"
-    cookie_name     = "session_id" # This should match your FastAPI session cookie name
-    cookie_duration = 86400        # 24 hours in seconds
+    cookie_name     = "session_id"
+    cookie_duration = 86400
   }
 
   health_check {
@@ -117,25 +142,29 @@ resource "aws_lb_target_group" "ecs_tg" {
   }
 }
 
+# Create listeners for each environment
 resource "aws_lb_listener" "front_end" {
-  load_balancer_arn = aws_lb.ecs_alb.arn
+  for_each = local.environments
+
+  load_balancer_arn = aws_lb.ecs_alb[each.key].arn
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.ecs_tg.arn
+    target_group_arn = aws_lb_target_group.ecs_tg[each.key].arn
   }
 }
 
-
+# Create ECS services for each environment
 resource "aws_ecs_service" "fastapi_ecs_service" {
-  name            = "fastapi-service"
-  cluster         = aws_ecs_cluster.ECS_Cluster.id
-  task_definition = aws_ecs_task_definition.fargate_task.arn
-  desired_count   = 1
+  for_each = local.environments
 
-  # Capacity Provider Strategy: Prefer Fargate Spot, fallback to Fargate
+  name            = "${local.base_name}-service-${each.key}"
+  cluster         = aws_ecs_cluster.ecs_clusters[each.key].id
+  task_definition = aws_ecs_task_definition.fargate_task[each.key].arn
+  desired_count   = each.value.desired_count
+
   capacity_provider_strategy {
     capacity_provider = "FARGATE_SPOT"
     weight            = 100
@@ -155,8 +184,8 @@ resource "aws_ecs_service" "fastapi_ecs_service" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.ecs_tg.arn
-    container_name   = "fastapi-service"
+    target_group_arn = aws_lb_target_group.ecs_tg[each.key].arn
+    container_name   = "${local.base_name}-service-${each.key}"
     container_port   = 8000
   }
 }
