@@ -47,8 +47,13 @@ resource "aws_ecs_task_definition" "fargate_task" {
       name  = "fastapi-service"
       image = "${aws_ecr_repository.ElasticContainerRegistry.repository_url}:latest" # Using the latest image from ECR
 
-      # Environment variables can be empty if not needed
-      environment = [],
+      # Environment variables including the secret
+      secrets = [
+        {
+          name      = "MISTRAL_API_KEY",
+          valueFrom = aws_secretsmanager_secret.mistral_api_key.arn
+        }
+      ],
 
       # Port mappings for your application
       portMappings = [
