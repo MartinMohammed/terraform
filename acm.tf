@@ -1,6 +1,6 @@
 # ACM Certificate for the subdomain
 resource "aws_acm_certificate" "subdomain_cert" {
-  domain_name       = "a.therealfriends.com"
+  domain_name       = "a.therealfriends.de"
   validation_method = "DNS"
 
   lifecycle {
@@ -13,9 +13,9 @@ resource "aws_acm_certificate" "subdomain_cert" {
   }
 }
 
-# Get the hosted zone for therealfriends.com
+# Get the hosted zone for therealfriends.de
 data "aws_route53_zone" "main" {
-  name = "therealfriends.com"
+  name = "therealfriends.de"
 }
 
 # Create DNS validation records
