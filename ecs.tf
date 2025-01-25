@@ -7,6 +7,7 @@ locals {
       cpu           = var.resource_settings["dev"].container_cpu
       memory        = var.resource_settings["dev"].container_memory
     }
+
     prod = {
       name          = var.environment_names["prod"]
       desired_count = var.resource_settings["prod"].instance_count
