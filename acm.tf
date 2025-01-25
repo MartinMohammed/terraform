@@ -1,7 +1,8 @@
 # ACM Certificate for the subdomain
 resource "aws_acm_certificate" "subdomain_cert" {
-  domain_name       = "a.therealfriends.de"
-  validation_method = "DNS"
+  domain_name               = "a.therealfriends.de"
+  validation_method         = "DNS"
+  subject_alternative_names = ["therealfriends.de"]
 
   lifecycle {
     create_before_destroy = true
