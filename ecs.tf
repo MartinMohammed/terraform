@@ -3,22 +3,22 @@ locals {
   environments = {
     dev = {
       name          = var.environment_names["dev"]
-      desired_count = 1
-      cpu           = "512"
-      memory        = "1024"
+      desired_count = var.resource_settings["dev"].instance_count
+      cpu           = var.resource_settings["dev"].container_cpu
+      memory        = var.resource_settings["dev"].container_memory
     }
     prod = {
       name          = var.environment_names["prod"]
-      desired_count = 2
-      cpu           = "1024"
-      memory        = "2048"
+      desired_count = var.resource_settings["prod"].instance_count
+      cpu           = var.resource_settings["prod"].container_cpu
+      memory        = var.resource_settings["prod"].container_memory
     }
   }
 
   # Resource naming patterns
   resource_names = {
-    cluster = "${local.base_name}-cluster"
-    service = "${local.base_name}-service"
+    cluster = "${local.base_name}"
+    service = "app-service"
     task    = "${local.base_name}-task"
     alb     = "${local.base_name}-alb"
     tg      = "${local.base_name}-tg"
@@ -33,6 +33,11 @@ resource "aws_ecs_cluster" "ecs_clusters" {
   setting {
     name  = "containerInsights"
     value = "enabled"
+  }
+
+  tags = {
+    Environment = each.value.name
+    Project     = local.base_name
   }
 }
 
@@ -77,14 +82,14 @@ resource "aws_ecs_task_definition" "fargate_task" {
   container_definitions = jsonencode([
     {
       name  = "${local.resource_names.service}-${each.value.name}"
-      image = "${aws_ecr_repository.ElasticContainerRegistry.repository_url}:${each.key}"
+      image = "${aws_ecr_repository.app_repository[each.key].repository_url}:${each.key}"
 
       secrets = [
         {
-          name      = "MISTRAL_API_KEY",
+          name      = "MISTRAL_API_KEY"
           valueFrom = aws_secretsmanager_secret.mistral_api_key.arn
         }
-      ],
+      ]
 
       portMappings = [
         {
@@ -107,8 +112,20 @@ resource "aws_ecs_task_definition" "fargate_task" {
       }
 
       essential = true
+
+      environment = [
+        {
+          name  = "ENVIRONMENT"
+          value = each.value.name
+        }
+      ]
     }
   ])
+
+  tags = {
+    Environment = each.value.name
+    Project     = local.base_name
+  }
 }
 
 # Create ALB for each environment
