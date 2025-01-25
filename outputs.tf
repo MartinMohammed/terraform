@@ -10,55 +10,78 @@ output "subnet_ids" {
 }
 
 # ECR outputs
-output "ecr_repository_url" {
-  description = "The URL of the ECR repository"
-  value       = aws_ecr_repository.app_repository.repository_url
+output "ecr_repository_urls" {
+  description = "The URLs of the ECR repositories"
+  value = {
+    for env in keys(local.environments) : env => aws_ecr_repository.app_repository[env].repository_url
+  }
 }
 
-output "ecr_repository_name" {
-  description = "The name of the ECR repository"
-  value       = aws_ecr_repository.app_repository.name
+output "ecr_repository_names" {
+  description = "The names of the ECR repositories"
+  value = {
+    for env in keys(local.environments) : env => aws_ecr_repository.app_repository[env].name
+  }
 }
 
 # ECS outputs
-output "ecs_cluster_name" {
-  description = "The name of the ECS cluster"
-  value       = aws_ecs_cluster.main.name
+output "ecs_cluster_names" {
+  description = "The names of the ECS clusters"
+  value = {
+    for env in keys(local.environments) : env => aws_ecs_cluster.ecs_clusters[env].name
+  }
 }
 
-output "ecs_service_name" {
-  description = "The name of the ECS service"
-  value       = aws_ecs_service.app_service.name
+output "ecs_service_names" {
+  description = "The names of the ECS services"
+  value = {
+    for env in keys(local.environments) : env => aws_ecs_service.fastapi_ecs_service[env].name
+  }
 }
 
-output "ecs_task_definition_family" {
-  description = "The family name of the ECS task definition"
-  value       = aws_ecs_task_definition.app_task.family
+output "ecs_task_definition_families" {
+  description = "The family names of the ECS task definitions"
+  value = {
+    for env in keys(local.environments) : env => aws_ecs_task_definition.fargate_task[env].family
+  }
 }
 
-output "ecs_task_definition_revision" {
-  description = "The revision of the ECS task definition"
-  value       = aws_ecs_task_definition.app_task.revision
+output "ecs_task_definition_revisions" {
+  description = "The revisions of the ECS task definitions"
+  value = {
+    for env in keys(local.environments) : env => aws_ecs_task_definition.fargate_task[env].revision
+  }
 }
 
 # Load Balancer outputs
-output "alb_dns_name" {
-  description = "The DNS name of the load balancer"
-  value       = aws_lb.main.dns_name
+output "alb_dns_names" {
+  description = "The DNS names of the load balancers"
+  value = {
+    for env in keys(local.environments) : env => aws_lb.ecs_alb[env].dns_name
+  }
 }
 
-output "alb_zone_id" {
-  description = "The zone ID of the load balancer"
-  value       = aws_lb.main.zone_id
+output "alb_zone_ids" {
+  description = "The zone IDs of the load balancers"
+  value = {
+    for env in keys(local.environments) : env => aws_lb.ecs_alb[env].zone_id
+  }
 }
 
 # Environment info
-output "environment" {
-  description = "Current environment"
-  value       = var.environment
+output "environments" {
+  description = "Environment configurations"
+  value = {
+    for env in keys(local.environments) : env => {
+      name          = local.environments[env].name
+      desired_count = local.environments[env].desired_count
+      cpu           = local.environments[env].cpu
+      memory        = local.environments[env].memory
+    }
+  }
 }
 
 output "resource_settings" {
   description = "Current environment resource settings"
-  value       = local.env_settings
+  value       = var.resource_settings
 }

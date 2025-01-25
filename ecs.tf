@@ -135,8 +135,13 @@ resource "aws_lb" "ecs_alb" {
   name               = "${local.resource_names.alb}-${each.value.name}"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb_sg.id]
+  security_groups    = [aws_security_group.alb_sg[each.key].id]
   subnets            = data.aws_subnets.default_subnets.ids
+
+  tags = {
+    Environment = each.value.name
+    Project     = local.base_name
+  }
 }
 
 # Create target groups for each environment
@@ -205,7 +210,7 @@ resource "aws_ecs_service" "fastapi_ecs_service" {
 
   network_configuration {
     subnets          = data.aws_subnets.default_subnets.ids
-    security_groups  = [aws_security_group.ecs_tasks_sg.id]
+    security_groups  = [aws_security_group.ecs_tasks_sg[each.key].id]
     assign_public_ip = true
   }
 
@@ -213,5 +218,10 @@ resource "aws_ecs_service" "fastapi_ecs_service" {
     target_group_arn = aws_lb_target_group.ecs_tg[each.key].arn
     container_name   = "${local.resource_names.service}-${each.value.name}"
     container_port   = 8000
+  }
+
+  tags = {
+    Environment = each.value.name
+    Project     = local.base_name
   }
 }
