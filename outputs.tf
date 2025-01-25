@@ -23,24 +23,32 @@ output "ecr_repository_url" {
   value       = aws_ecr_repository.ElasticContainerRegistry.repository_url
 }
 
-output "ecs_cluster_name" {
-  description = "The name of the ECS cluster"
-  value       = aws_ecs_cluster.ECS_Cluster.name
+output "ecs_cluster_names" {
+  description = "The names of the ECS clusters"
+  value = {
+    for env in keys(local.environments) : env => aws_ecs_cluster.ecs_clusters[env].name
+  }
 }
 
-output "ecs_service_name" {
-  description = "The name of the ECS service"
-  value       = aws_ecs_service.fastapi_ecs_service.name
+output "ecs_service_names" {
+  description = "The names of the ECS services"
+  value = {
+    for env in keys(local.environments) : env => aws_ecs_service.fastapi_ecs_service[env].name
+  }
 }
 
-output "ecs_task_family" {
-  description = "The family name of the ECS task definition"
-  value       = aws_ecs_task_definition.fargate_task.family
+output "ecs_task_families" {
+  description = "The family names of the ECS task definitions"
+  value = {
+    for env in keys(local.environments) : env => aws_ecs_task_definition.fargate_task[env].family
+  }
 }
 
-output "ecs_task_definition_arn" {
-  description = "The ARN of the ECS task definition"
-  value       = aws_ecs_task_definition.fargate_task.arn
+output "ecs_task_definition_arns" {
+  description = "The ARNs of the ECS task definitions"
+  value = {
+    for env in keys(local.environments) : env => aws_ecs_task_definition.fargate_task[env].arn
+  }
 }
 
 
@@ -49,7 +57,9 @@ output "ecs_security_group_id" {
   value       = aws_security_group.ecs_tasks_sg.id
 }
 
-output "alb_dns_name" {
-  description = "The DNS name of the ALB"
-  value       = aws_lb.ecs_alb.dns_name
+output "alb_dns_names" {
+  description = "The DNS names of the ALBs"
+  value = {
+    for env in keys(local.environments) : env => aws_lb.ecs_alb[env].dns_name
+  }
 }
