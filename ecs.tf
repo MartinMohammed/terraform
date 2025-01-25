@@ -18,7 +18,7 @@ locals {
 
   # Resource naming patterns
   resource_names = {
-    cluster = "${local.base_name}"
+    cluster = "${local.base_name}-cluster"
     service = "app-service"
     task    = "${local.base_name}-task"
     alb     = "${local.base_name}-alb"
