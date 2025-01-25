@@ -1,8 +1,6 @@
-# Create ECR repositories for each environment
+# Create a single ECR repository for both environments
 resource "aws_ecr_repository" "app_repository" {
-  for_each = local.environments
-
-  name                 = "${local.base_name}-${each.value.name}"
+  name                 = local.base_name
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -14,8 +12,56 @@ resource "aws_ecr_repository" "app_repository" {
   }
 
   tags = {
-    Environment = each.value.name
-    Project     = local.base_name
+    Project = local.base_name
   }
+}
+
+# Add lifecycle policy to clean up untagged images
+resource "aws_ecr_lifecycle_policy" "app_repository_policy" {
+  repository = aws_ecr_repository.app_repository.name
+
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Keep last 5 dev images"
+        selection = {
+          tagStatus     = "tagged"
+          tagPrefixList = ["dev"]
+          countType     = "imageCountMoreThan"
+          countNumber   = 5
+        }
+        action = {
+          type = "expire"
+        }
+      },
+      {
+        rulePriority = 2
+        description  = "Keep last 5 prod images"
+        selection = {
+          tagStatus     = "tagged"
+          tagPrefixList = ["prod"]
+          countType     = "imageCountMoreThan"
+          countNumber   = 5
+        }
+        action = {
+          type = "expire"
+        }
+      },
+      {
+        rulePriority = 3
+        description  = "Remove untagged images"
+        selection = {
+          tagStatus   = "untagged"
+          countType   = "sinceImagePushed"
+          countUnit   = "days"
+          countNumber = 1
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
 }
 

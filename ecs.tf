@@ -26,27 +26,23 @@ locals {
   }
 }
 
-# Create ECS clusters for dev and prod
-resource "aws_ecs_cluster" "ecs_clusters" {
-  for_each = local.environments
+# Create a single ECS cluster for both environments
+resource "aws_ecs_cluster" "ecs_cluster" {
+  name = local.resource_names.cluster
 
-  name = "${local.resource_names.cluster}-${each.value.name}"
   setting {
     name  = "containerInsights"
     value = "enabled"
   }
 
   tags = {
-    Environment = each.value.name
-    Project     = local.base_name
+    Project = local.base_name
   }
 }
 
-# Create capacity providers for each cluster
+# Create capacity providers for the cluster
 resource "aws_ecs_cluster_capacity_providers" "ecs_capacity_strategy" {
-  for_each = local.environments
-
-  cluster_name = aws_ecs_cluster.ecs_clusters[each.key].name
+  cluster_name = aws_ecs_cluster.ecs_cluster.name
 
   capacity_providers = ["FARGATE_SPOT", "FARGATE"]
 
@@ -83,7 +79,7 @@ resource "aws_ecs_task_definition" "fargate_task" {
   container_definitions = jsonencode([
     {
       name  = "${local.resource_names.service}-${each.value.name}"
-      image = "${aws_ecr_repository.app_repository[each.key].repository_url}:${each.key}"
+      image = "${aws_ecr_repository.app_repository.repository_url}:${each.value.name}"
 
       secrets = [
         {
@@ -193,7 +189,7 @@ resource "aws_ecs_service" "fastapi_ecs_service" {
   for_each = local.environments
 
   name            = "${local.resource_names.service}-${each.value.name}"
-  cluster         = aws_ecs_cluster.ecs_clusters[each.key].id
+  cluster         = aws_ecs_cluster.ecs_cluster.id
   task_definition = aws_ecs_task_definition.fargate_task[each.key].arn
   desired_count   = each.value.desired_count
 

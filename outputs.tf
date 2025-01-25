@@ -10,26 +10,20 @@ output "subnet_ids" {
 }
 
 # ECR outputs
-output "ecr_repository_urls" {
-  description = "The URLs of the ECR repositories"
-  value = {
-    for env in keys(local.environments) : env => aws_ecr_repository.app_repository[env].repository_url
-  }
+output "ecr_repository_url" {
+  description = "The URL of the ECR repository"
+  value       = aws_ecr_repository.app_repository.repository_url
 }
 
-output "ecr_repository_names" {
-  description = "The names of the ECR repositories"
-  value = {
-    for env in keys(local.environments) : env => aws_ecr_repository.app_repository[env].name
-  }
+output "ecr_repository_name" {
+  description = "The name of the ECR repository"
+  value       = aws_ecr_repository.app_repository.name
 }
 
 # ECS outputs
-output "ecs_cluster_names" {
-  description = "The names of the ECS clusters"
-  value = {
-    for env in keys(local.environments) : env => aws_ecs_cluster.ecs_clusters[env].name
-  }
+output "ecs_cluster_name" {
+  description = "The name of the ECS cluster"
+  value       = aws_ecs_cluster.ecs_cluster.name
 }
 
 output "ecs_service_names" {
