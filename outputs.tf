@@ -20,6 +20,7 @@ output "ecr_repository_name" {
   value       = aws_ecr_repository.app_repository.name
 }
 
+
 # ECS outputs
 output "ecs_cluster_name" {
   description = "The name of the ECS cluster"
