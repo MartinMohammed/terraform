@@ -1,4 +1,4 @@
-# ACM Certificate for the subdomain
+# ACM Certificate for the production subdomain
 resource "aws_acm_certificate" "subdomain_cert" {
   domain_name               = "a.therealfriends.de"
   validation_method         = "DNS"
@@ -14,12 +14,12 @@ resource "aws_acm_certificate" "subdomain_cert" {
   }
 }
 
-# Get the hosted zone for therealfriends.de
+# Get the hosted zone for therealfriends.de (only needed for prod)
 data "aws_route53_zone" "main" {
   name = "therealfriends.de"
 }
 
-# Create DNS validation records
+# Create DNS validation records (only for prod)
 resource "aws_route53_record" "cert_validation" {
   for_each = {
     for dvo in aws_acm_certificate.subdomain_cert.domain_validation_options : dvo.domain_name => {
@@ -37,7 +37,7 @@ resource "aws_route53_record" "cert_validation" {
   zone_id         = data.aws_route53_zone.main.zone_id
 }
 
-# Certificate validation
+# Certificate validation (only for prod)
 resource "aws_acm_certificate_validation" "cert_validation" {
   certificate_arn         = aws_acm_certificate.subdomain_cert.arn
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]

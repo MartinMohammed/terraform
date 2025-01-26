@@ -32,3 +32,6 @@ data "aws_subnets" "default_subnets" {
     values = [data.aws_vpc.default.id]
   }
 }
+
+# Get current AWS account ID
+data "aws_caller_identity" "current" {}

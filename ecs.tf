@@ -185,18 +185,33 @@ resource "aws_lb_listener" "front_end" {
   protocol          = "HTTP"
 
   default_action {
-    type = "redirect"
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
+    type = each.key == "prod" ? "redirect" : "forward"
+    dynamic "redirect" {
+      for_each = each.key == "prod" ? [1] : []
+      content {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+    }
+    dynamic "forward" {
+      for_each = each.key == "dev" ? [1] : []
+      content {
+        target_group {
+          arn = aws_lb_target_group.ecs_tg[each.key].arn
+        }
+      }
     }
   }
 }
 
-# HTTPS listener
+# HTTPS listener (only for prod)
 resource "aws_lb_listener" "front_end_https" {
-  for_each = local.environments
+  # Only create for prod environment
+  for_each = {
+    for k, v in local.environments : k => v
+    if k == "prod"
+  }
 
   load_balancer_arn = aws_lb.ecs_alb[each.key].arn
   port              = "443"
@@ -210,6 +225,21 @@ resource "aws_lb_listener" "front_end_https" {
   }
 
   depends_on = [aws_acm_certificate_validation.cert_validation]
+}
+
+# Default certificate for dev environment
+resource "aws_acm_certificate" "default_cert" {
+  domain_name       = "*.${data.aws_caller_identity.current.account_id}.${var.aws_region}.elb.amazonaws.com"
+  validation_method = "DNS"
+
+  tags = {
+    Environment = "dev"
+    Project     = var.base_name
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Create ECS services for each environment
