@@ -157,12 +157,6 @@ resource "aws_lb_target_group" "ecs_tg" {
   vpc_id      = data.aws_vpc.default.id
   target_type = "ip"
 
-  stickiness {
-    type            = "lb_cookie"
-    cookie_duration = 86400
-    enabled         = true
-  }
-
   health_check {
     enabled             = true
     healthy_threshold   = 2

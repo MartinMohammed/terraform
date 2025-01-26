@@ -46,10 +46,10 @@ variable "resource_settings" {
       container_cpu    = 256
     }
     prod = {
-      instance_count   = 2
+      instance_count   = 1
       instance_type    = "t3.small"
-      container_memory = 2048
-      container_cpu    = 1024
+      container_memory = 4096
+      container_cpu    = 2048
     }
   }
 }
