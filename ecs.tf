@@ -158,9 +158,9 @@ resource "aws_lb_target_group" "ecs_tg" {
   target_type = "ip"
 
   stickiness {
-    type            = "app_cookie"
-    cookie_name     = "session_id"
+    type            = "lb_cookie"
     cookie_duration = 86400
+    enabled         = true
   }
 
   health_check {
