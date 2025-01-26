@@ -186,6 +186,8 @@ resource "aws_lb_listener" "front_end" {
 
   default_action {
     type = each.key == "prod" ? "redirect" : "forward"
+
+    # Only for prod: redirect to HTTPS
     dynamic "redirect" {
       for_each = each.key == "prod" ? [1] : []
       content {
@@ -194,14 +196,9 @@ resource "aws_lb_listener" "front_end" {
         status_code = "HTTP_301"
       }
     }
-    dynamic "forward" {
-      for_each = each.key == "dev" ? [1] : []
-      content {
-        target_group {
-          arn = aws_lb_target_group.ecs_tg[each.key].arn
-        }
-      }
-    }
+
+    # Only for dev: forward to target group
+    target_group_arn = each.key == "dev" ? aws_lb_target_group.ecs_tg[each.key].arn : null
   }
 }
 
@@ -225,21 +222,6 @@ resource "aws_lb_listener" "front_end_https" {
   }
 
   depends_on = [aws_acm_certificate_validation.cert_validation]
-}
-
-# Default certificate for dev environment
-resource "aws_acm_certificate" "default_cert" {
-  domain_name       = "*.${data.aws_caller_identity.current.account_id}.${var.aws_region}.elb.amazonaws.com"
-  validation_method = "DNS"
-
-  tags = {
-    Environment = "dev"
-    Project     = var.base_name
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 # Create ECS services for each environment
