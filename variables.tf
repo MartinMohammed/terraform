@@ -29,7 +29,6 @@ variable "base_name" {
   default     = "game-jam"
 }
 
-
 # Environment specific variables
 variable "resource_settings" {
   description = "Environment specific resource settings"
@@ -40,17 +39,20 @@ variable "resource_settings" {
     container_cpu    = number
   }))
   default = {
-    dev = {
-      instance_count   = 1
-      instance_type    = "t3.micro"
-      container_memory = 512
-      container_cpu    = 256
-    }
+    # Dev environment commented out as we're focusing on production
+    # dev = {
+    #   instance_count   = 1
+    #   instance_type    = "t3.micro"
+    #   container_memory = 512
+    #   container_cpu    = 256
+    # }
     prod = {
+      # Single instance with enough capacity for 50 concurrent users
+      # 4GB memory and 2 vCPU should comfortably handle 50 concurrent users
       instance_count   = 1
-      instance_type    = "t3.small"
-      container_memory = 4096
-      container_cpu    = 2048
+      instance_type    = "t3.micro" # Smaller instance type (though not used in Fargate)
+      container_memory = 2048       # 2GB memory
+      container_cpu    = 1024       # 1 vCPU
     }
   }
 }
