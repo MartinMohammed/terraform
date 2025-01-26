@@ -1,12 +1,12 @@
 locals {
   base_name = var.base_name
   environments = {
-    dev = {
-      name          = var.environment_names["dev"]
-      desired_count = var.resource_settings["dev"].instance_count
-      cpu           = var.resource_settings["dev"].container_cpu
-      memory        = var.resource_settings["dev"].container_memory
-    }
+    # dev = {
+    #   name          = var.environment_names["dev"]
+    #   desired_count = var.resource_settings["dev"].instance_count
+    #   cpu           = var.resource_settings["dev"].container_cpu
+    #   memory        = var.resource_settings["dev"].container_memory
+    # }
 
     prod = {
       name          = var.environment_names["prod"]
@@ -179,20 +179,17 @@ resource "aws_lb_listener" "front_end" {
   protocol          = "HTTP"
 
   default_action {
-    type = each.key == "prod" ? "redirect" : "forward"
+    type = "redirect" # Always redirect to HTTPS since we only have prod
 
     # Only for prod: redirect to HTTPS
-    dynamic "redirect" {
-      for_each = each.key == "prod" ? [1] : []
-      content {
-        port        = "443"
-        protocol    = "HTTPS"
-        status_code = "HTTP_301"
-      }
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
     }
 
-    # Only for dev: forward to target group
-    target_group_arn = each.key == "dev" ? aws_lb_target_group.ecs_tg[each.key].arn : null
+    # Dev configuration commented out as we're focusing on production
+    # target_group_arn = each.key == "dev" ? aws_lb_target_group.ecs_tg[each.key].arn : null
   }
 }
 
