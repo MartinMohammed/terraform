@@ -29,6 +29,7 @@ variable "base_name" {
   default     = "game-jam"
 }
 
+
 # Environment specific variables
 variable "resource_settings" {
   description = "Environment specific resource settings"
