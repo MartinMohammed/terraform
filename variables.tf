@@ -47,12 +47,11 @@ variable "resource_settings" {
     #   container_cpu    = 256
     # }
     prod = {
-      # Single instance with enough capacity for 50 concurrent users
-      # 4GB memory and 2 vCPU should comfortably handle 50 concurrent users
+      # Single instance with enough capacity, one size bigger
       instance_count   = 1
-      instance_type    = "t3.micro" # Smaller instance type (though not used in Fargate)
-      container_memory = 2048       # 2GB memory
-      container_cpu    = 1024       # 1 vCPU
+      instance_type    = "t3.large" # 2 vCPU, 8GB RAM
+      container_memory = 8192       # 8GB memory for the container
+      container_cpu    = 2048       # 2 vCPU (in ECS CPU units)
     }
   }
 }
