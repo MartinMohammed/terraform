@@ -49,9 +49,9 @@ variable "resource_settings" {
     prod = {
       # Single instance with enough capacity, one size bigger
       instance_count   = 1
-      instance_type    = "t3.large" # 2 vCPU, 8GB RAM
-      container_memory = 8192       # 8GB memory for the container
-      container_cpu    = 2048       # 2 vCPU (in ECS CPU units)
+      instance_type    = "t3.small" # 2 vCPU, 8GB RAM
+      container_memory = 1048       # 1GB memory for the container
+      container_cpu    = 524        # 0.5 vCPU (in ECS CPU units)
     }
   }
 }
