@@ -65,8 +65,8 @@ resource "aws_wafv2_web_acl" "main" {
     name     = "AllowedDomains" # referer header is used to identify the domain of the request
     priority = 1
 
-    override_action {
-      none {}
+    action {
+      allow {}
     }
 
     statement {
