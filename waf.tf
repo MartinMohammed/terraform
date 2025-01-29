@@ -126,13 +126,8 @@ resource "aws_wafv2_web_acl_association" "alb" {
   web_acl_arn  = aws_wafv2_web_acl.main.arn
 }
 
-# Enable WAF logging to CloudWatch
-resource "aws_cloudwatch_log_group" "waf" {
-  name              = "/aws/waf/${local.base_name}"
-  retention_in_days = 30
-}
-
+# Enable WAF logging configuration
 resource "aws_wafv2_web_acl_logging_configuration" "waf" {
-  log_destination_configs = ["${aws_cloudwatch_log_group.waf.arn}:*"]
+  log_destination_configs = [aws_kinesis_firehose_delivery_stream.waf.arn]
   resource_arn            = aws_wafv2_web_acl.main.arn
 }
