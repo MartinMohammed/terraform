@@ -62,38 +62,6 @@ resource "aws_wafv2_web_acl" "web_acl" {
     }
   }
 
-  # Bad bot detection rule
-  rule {
-    name     = var.rule_name
-    priority = 3
-
-    action {
-      block {}
-    }
-
-    statement {
-      byte_match_statement {
-        field_to_match {
-          single_header {
-            name = "User-Agent"
-          }
-        }
-        positional_constraint = "STARTS_WITH"
-        search_string         = "BadBot"
-        text_transformation {
-          priority = 1
-          type     = "LOWERCASE"
-        }
-      }
-    }
-
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                = "BadBotRule"
-      sampled_requests_enabled   = true
-    }
-  }
-
   visibility_config {
     cloudwatch_metrics_enabled = true
     metric_name                = "WebACLMetrics"
