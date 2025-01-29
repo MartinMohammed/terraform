@@ -123,16 +123,16 @@ resource "aws_wafv2_web_acl" "main" {
 resource "aws_wafv2_web_acl_association" "alb" {
   for_each     = local.environments
   resource_arn = aws_lb.ecs_alb[each.key].arn
-  web_acl_arn  = aws_wafv2_web_acl.main.arn # Associate WAF with ALB
+  web_acl_arn  = aws_wafv2_web_acl.main.arn
 }
 
-# Enable WAF logging
+# Enable WAF logging to CloudWatch
 resource "aws_cloudwatch_log_group" "waf" {
-  name              = "/aws/waf/${local.base_name}" # Log group for WAF
+  name              = "/aws/waf/${local.base_name}"
   retention_in_days = 30
 }
 
 resource "aws_wafv2_web_acl_logging_configuration" "waf" {
   log_destination_configs = ["${aws_cloudwatch_log_group.waf.arn}:*"]
-  resource_arn            = aws_wafv2_web_acl.main.arn # Enable logging for WAF
+  resource_arn            = aws_wafv2_web_acl.main.arn
 }
