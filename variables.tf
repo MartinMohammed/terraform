@@ -30,14 +30,16 @@ variable "base_name" {
 }
 
 # ------------------- WAF variables -------------------
-variable "web_acl_name" {
+variable "waf_web_acl_name" {
   description = "The name of the WAF web ACL"
-  default     = "WAF"
+  default     = "game-jam-waf"
 }
-variable "web_acl_description" {
+
+variable "waf_web_acl_description" {
   description = "The description of the WAF web ACL"
-  default     = "My Web ACL"
+  default     = "WAF ACL for Game Jam application"
 }
+
 variable "rule_name" {
   description = "The name of the WAF rule"
   default     = "bad-bot-rule"

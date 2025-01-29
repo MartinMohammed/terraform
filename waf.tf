@@ -1,6 +1,15 @@
+# -------------------------- WAF --------------------------
+# Description: WEB ACL is top level entity that can be assigned to resources to protect them such as ALB, API Gateway
+# Rules are evaluated in order of priority
+# Rules can be grouped into a rule group
+# Rule groups can be used in multiple web ACLs
+# Web ACLs can be associated with resources
+# Web ACLs can be associated with resources
+# Web ACLs can be associated with resources
+
 resource "aws_wafv2_web_acl" "web_acl" {
-  name        = var.web_acl_name
-  description = var.web_acl_description
+  name        = var.waf_web_acl_name
+  description = var.waf_web_acl_description
   scope       = "REGIONAL"
 
   default_action {
