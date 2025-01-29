@@ -115,6 +115,7 @@ resource "aws_wafv2_web_acl" "main" {
   }
 }
 
+
 # Associate WAF with ALB
 resource "aws_wafv2_web_acl_association" "alb" {
   for_each     = local.environments
