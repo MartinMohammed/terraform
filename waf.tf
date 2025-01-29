@@ -2,79 +2,74 @@
 resource "aws_wafv2_rule_group" "rate_limiting" {
   name     = "${local.base_name}-rate-limit"
   scope    = "REGIONAL"
-  capacity = 30
+  capacity = 2 # Rate-based rule uses 2 WCUs
 
   rule {
-    # The capacity parameter in a rule group represents the total processing capacity of the rule group,
-    # measured in Web ACL Capacity Units (WCU). Each type of rule consumes a different amount of capacity,
-    # and the total capacity of all rules in a rule group cannot exceed the specified capacity value.
     name     = "rate-limit"
     priority = 1
 
     action {
-      count {}
+      block {}
     }
 
     statement {
       rate_based_statement {
-        limit              = 75 # Requests per 5 minutes per IP which is 15 request per minute 
+        limit              = 100 # Requests per 5 minutes per IP
         aggregate_key_type = "IP"
       }
     }
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                = "RateLimitMetric" # Metric name for rate limiting
+      metric_name                = "RateLimitMetric"
       sampled_requests_enabled   = true
     }
   }
 
   visibility_config {
     cloudwatch_metrics_enabled = true
-    metric_name                = "RateLimitRuleGroupMetric" # Metric name for rate limiting rule group
+    metric_name                = "RateLimitRuleGroup"
     sampled_requests_enabled   = true
   }
 }
 
-# Create allowed domains rule
-resource "aws_wafv2_regex_pattern_set" "allowed_domains" {
-  name  = "${local.base_name}-allowed-domains"
+# Create blocked domains rule
+resource "aws_wafv2_regex_pattern_set" "blocked_domains" {
+  name  = "${local.base_name}-blocked-domains"
   scope = "REGIONAL"
 
   regular_expression {
-    regex_string = "^.*\\.huggingface\\.co$"
+    regex_string = "^.*\\.evil\\.com$"
   }
   regular_expression {
-    regex_string = "^.*\\.mistral\\.ai$"
-  }
-  regular_expression {
-    regex_string = "^.*\\.elevenlabs\\.io$"
+    regex_string = "^.*\\.malicious\\.org$"
   }
 }
 
 # Create WAF ACL
 resource "aws_wafv2_web_acl" "main" {
   name  = "${local.base_name}-waf"
-  scope = "REGIONAL" # Regional WAF is used for ALB
+  scope = "REGIONAL"
 
   default_action {
-    block {}
+    allow {}
   }
 
+  # Block bad domains
   rule {
-    name     = "AllowedDomains" # referer header is used to identify the domain of the request
+    name     = "BlockedDomains"
     priority = 1
 
     action {
-      allow {}
+      block {}
     }
 
     statement {
       regex_pattern_set_reference_statement {
-        arn = aws_wafv2_regex_pattern_set.allowed_domains.arn
+        arn = aws_wafv2_regex_pattern_set.blocked_domains.arn
         field_to_match {
           single_header {
-            name = "referer"
+            name = "host"
           }
         }
         text_transformation {
@@ -86,11 +81,12 @@ resource "aws_wafv2_web_acl" "main" {
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                = "AllowedDomainsRule"
+      metric_name                = "BlockedDomainsRule"
       sampled_requests_enabled   = true
     }
   }
 
+  # Rate limiting
   rule {
     name     = "RateLimit"
     priority = 2
@@ -126,7 +122,7 @@ resource "aws_wafv2_web_acl_association" "alb" {
   web_acl_arn  = aws_wafv2_web_acl.main.arn
 }
 
-# Enable WAF logging configuration
+# Enable WAF logging
 resource "aws_wafv2_web_acl_logging_configuration" "waf" {
   log_destination_configs = [aws_kinesis_firehose_delivery_stream.waf.arn]
   resource_arn            = aws_wafv2_web_acl.main.arn
