@@ -122,7 +122,7 @@ resource "aws_wafv2_web_acl" "main" {
 # Associate WAF with ALB
 resource "aws_wafv2_web_acl_association" "alb" {
   for_each     = local.environments
-  resource_arn = aws_lb[each.key].arn
+  resource_arn = aws_lb.ecs_alb[each.key].arn
   web_acl_arn  = aws_wafv2_web_acl.main.arn # Associate WAF with ALB
 }
 
