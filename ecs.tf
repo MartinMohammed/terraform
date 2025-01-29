@@ -1,33 +1,3 @@
-locals {
-  base_name = var.base_name
-  environments = {
-    # dev = {
-    #   name          = var.environment_names["dev"]
-    #   desired_count = var.resource_settings["dev"].instance_count
-    #   cpu           = var.resource_settings["dev"].container_cpu
-    #   memory        = var.resource_settings["dev"].container_memory
-    # }
-
-    prod = {
-      name          = var.environment_names["prod"]
-      desired_count = var.resource_settings["prod"].instance_count
-      cpu           = var.resource_settings["prod"].container_cpu
-      memory        = var.resource_settings["prod"].container_memory
-    }
-
-
-  }
-
-  # Resource naming patterns
-  resource_names = {
-    cluster = "${local.base_name}-cluster"
-    service = "app-service"
-    task    = "${local.base_name}-task"
-    alb     = "${local.base_name}-alb"
-    tg      = "${local.base_name}-tg"
-  }
-}
-
 # Create a single ECS cluster for both environments
 resource "aws_ecs_cluster" "ecs_cluster" {
   name = local.resource_names.cluster

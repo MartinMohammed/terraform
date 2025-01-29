@@ -4,4 +4,4 @@ resource "aws_wafv2_web_acl_association" "alb_waf" {
 
   resource_arn = aws_lb.ecs_alb[each.key].arn
   web_acl_arn  = aws_wafv2_web_acl.web_acl.arn
-} 
+}
