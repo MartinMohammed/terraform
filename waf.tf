@@ -16,9 +16,9 @@ resource "aws_wafv2_web_acl" "web_acl" {
     block {}
   }
 
-  # Rule to allow traffic only from Hugging Face domain
+  # Rule to allow traffic from the Game Jam static site
   rule {
-    name     = "AllowHuggingFaceDomain"
+    name     = "AllowGameJamDomain"
     priority = 1
 
     action {
@@ -33,7 +33,7 @@ resource "aws_wafv2_web_acl" "web_acl" {
           }
         }
         positional_constraint = "EXACTLY"
-        search_string         = "https://huggingface.co"
+        search_string         = "https://mistral-ai-game-jam-neuraljam.static.hf.space"
         text_transformation {
           priority = 1
           type     = "LOWERCASE"
@@ -43,7 +43,7 @@ resource "aws_wafv2_web_acl" "web_acl" {
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                = "AllowHuggingFaceDomain"
+      metric_name                = "AllowGameJamDomain"
       sampled_requests_enabled   = true
     }
   }
