@@ -12,8 +12,8 @@ resource "aws_wafv2_web_acl" "web_acl" {
     name     = "AllowHuggingFaceDomain"
     priority = 1
 
-    override_action {
-      none {}
+    action {
+      allow {}
     }
 
     statement {
