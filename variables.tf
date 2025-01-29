@@ -29,7 +29,25 @@ variable "base_name" {
   default     = "game-jam"
 }
 
-# Environment specific variables
+# ------------------- WAF variables -------------------
+variable "web_acl_name" {
+  description = "The name of the WAF web ACL"
+  default     = "WAF"
+}
+variable "web_acl_description" {
+  description = "The description of the WAF web ACL"
+  default     = "My Web ACL"
+}
+variable "rule_name" {
+  description = "The name of the WAF rule"
+  default     = "bad-bot-rule"
+}
+variable "rule_priority" {
+  description = "The priority of the WAF rule"
+  default     = 1
+}
+
+# ------------------- Environment specific variables -------------------
 variable "resource_settings" {
   description = "Environment specific resource settings"
   type = map(object({
