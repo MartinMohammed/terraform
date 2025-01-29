@@ -7,9 +7,9 @@ resource "aws_cloudwatch_log_group" "waf" {
 # Create Kinesis Firehose for WAF logging
 resource "aws_kinesis_firehose_delivery_stream" "waf" {
   name        = "${local.base_name}-waf-logs"
-  destination = "s3"
+  destination = "extended_s3"
 
-  s3_configuration {
+  extended_s3_configuration {
     role_arn   = aws_iam_role.firehose_waf.arn
     bucket_arn = aws_s3_bucket.waf_logs.arn
   }
