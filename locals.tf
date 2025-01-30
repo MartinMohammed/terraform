@@ -1,10 +1,15 @@
-
 # Define the environments configuration globally
 # Locals defined in any .tf file will be available to all other .tf files
 # locals allow us to group several variables together. They are evaluated at runtime.
 locals {
   base_name = var.base_name
   environments = {
+    dev = {
+      name          = var.environment_names["dev"]
+      desired_count = var.resource_settings["dev"].instance_count
+      cpu           = var.resource_settings["dev"].container_cpu
+      memory        = var.resource_settings["dev"].container_memory
+    }
     prod = {
       name          = var.environment_names["prod"]
       desired_count = var.resource_settings["prod"].instance_count

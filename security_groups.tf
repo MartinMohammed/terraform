@@ -37,13 +37,28 @@ resource "aws_security_group" "alb_sg" {
   description = "Security group for ALB in ${each.value.name}"
   vpc_id      = data.aws_vpc.default.id
 
-  # Only allow HTTPS traffic (best practice)
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "Allow HTTPS traffic"
+  # Allow HTTP traffic for dev environment
+  dynamic "ingress" {
+    for_each = each.key == "dev" ? [1] : []
+    content {
+      from_port   = 80
+      to_port     = 80
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+      description = "Allow HTTP traffic for dev environment"
+    }
+  }
+
+  # Allow HTTPS traffic for prod environment
+  dynamic "ingress" {
+    for_each = each.key == "prod" ? [1] : []
+    content {
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+      description = "Allow HTTPS traffic for prod environment"
+    }
   }
 
   egress {
