@@ -149,17 +149,25 @@ resource "aws_lb_listener" "front_end" {
   protocol          = "HTTP"
 
   default_action {
-    type = "redirect" # Always redirect to HTTPS since we only have prod
+    type = each.key == "prod" ? "redirect" : "forward"
 
-    # Only for prod: redirect to HTTPS
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
+    dynamic "redirect" {
+      for_each = each.key == "prod" ? [1] : []
+      content {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
     }
 
-    # Dev configuration commented out as we're focusing on production
-    # target_group_arn = each.key == "dev" ? aws_lb_target_group.ecs_tg[each.key].arn : null
+    dynamic "forward" {
+      for_each = each.key == "dev" ? [1] : []
+      content {
+        target_group {
+          arn = aws_lb_target_group.ecs_tg[each.key].arn
+        }
+      }
+    }
   }
 }
 
