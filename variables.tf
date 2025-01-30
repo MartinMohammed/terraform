@@ -61,12 +61,12 @@ variable "resource_settings" {
   }))
   default = {
     # Dev environment commented out as we're focusing on production
-    # dev = {
-    #   instance_count   = 1
-    #   instance_type    = "t3.micro"
-    #   container_memory = 512
-    #   container_cpu    = 256
-    # }
+    dev = {
+      instance_count   = 1
+      instance_type    = "t3.micro"
+      container_memory = 512
+      container_cpu    = 256
+    }
     prod = {
       # Single smaller instance
       instance_count   = 1
