@@ -23,14 +23,13 @@ data "aws_route53_zone" "main" {
 
 # Create DNS validation records (only for prod)
 resource "aws_route53_record" "cert_validation" {
-  count = var.environment == "prod" ? 1 : 0
-  for_each = {
+  for_each = var.environment == "prod" ? {
     for dvo in aws_acm_certificate.subdomain_cert[0].domain_validation_options : dvo.domain_name => {
       name   = dvo.resource_record_name
       record = dvo.resource_record_value
       type   = dvo.resource_record_type
     }
-  }
+  } : {}
 
   allow_overwrite = true
   name            = each.value.name
@@ -44,5 +43,5 @@ resource "aws_route53_record" "cert_validation" {
 resource "aws_acm_certificate_validation" "cert_validation" {
   count                   = var.environment == "prod" ? 1 : 0
   certificate_arn         = aws_acm_certificate.subdomain_cert[0].arn
-  validation_record_fqdns = [for record in aws_route53_record.cert_validation[0] : record.fqdn]
+  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
