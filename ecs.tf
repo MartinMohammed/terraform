@@ -110,6 +110,7 @@ resource "aws_lb" "ecs_alb" {
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg[each.key].id]
   subnets            = data.aws_subnets.default_subnets.ids
+  idle_timeout       = 300 # Increasing timeout to 5 minutes (300 seconds)
 
   tags = {
     Environment = each.value.name
