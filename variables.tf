@@ -67,6 +67,7 @@ variable "resource_settings" {
       container_memory = 512
       container_cpu    = 256
     }
+
     prod = {
       # Single smaller instance
       instance_count   = 1
