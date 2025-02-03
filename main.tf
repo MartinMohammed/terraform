@@ -29,20 +29,20 @@ provider "aws" {
   }
 }
 
-locals {
-  # Common name prefix for resources
-  name_prefix = "${var.base_name}-${var.environment}"
+# locals {
+#   # Common name prefix for resources
+#   name_prefix = "${var.base_name}-${var.environment}"
 
-  # Get environment specific settings
-  env_settings = var.resource_settings[var.environment]
+#   # Get environment specific settings
+#   env_settings = var.resource_settings[var.environment]
 
-  # Common tags for all resources
-  common_tags = {
-    Environment = var.environment
-    Project     = var.base_name
-    ManagedBy   = "Terraform"
-  }
-}
+#   # Common tags for all resources
+#   common_tags = {
+#     Environment = var.environment
+#     Project     = var.base_name
+#     ManagedBy   = "Terraform"
+#   }
+# }
 
 
-# You can add your AWS resources here 
+# # You can add your AWS resources here 
